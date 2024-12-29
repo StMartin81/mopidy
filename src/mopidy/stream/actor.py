@@ -129,7 +129,11 @@ def _unwrap_stream(  # noqa: PLR0911  # TODO: cleanup the return value of this.
         seen_uris.add(uri)
 
         logger.debug("Unwrapping stream from URI: %s", uri)
-        uri_redirected = urllib.request.urlopen(uri).geturl()
+
+        try:
+            uri_redirected = urllib.request.urlopen(uri).geturl()
+        except:
+            uri_redirected = uri
 
         try:
             scan_timeout = deadline - time.time()
