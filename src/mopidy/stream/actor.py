@@ -3,6 +3,7 @@ import logging
 import re
 import time
 import urllib.parse
+import urllib.request
 
 import pykka
 
@@ -128,6 +129,7 @@ def _unwrap_stream(  # noqa: PLR0911  # TODO: cleanup the return value of this.
         seen_uris.add(uri)
 
         logger.debug("Unwrapping stream from URI: %s", uri)
+        uri_redirected = urllib.request.urlopen(uri).geturl()
 
         try:
             scan_timeout = deadline - time.time()
@@ -138,7 +140,7 @@ def _unwrap_stream(  # noqa: PLR0911  # TODO: cleanup the return value of this.
                     timeout,
                 )
                 return None, None
-            scan_result = scanner.scan(uri, timeout=scan_timeout)
+            scan_result = scanner.scan(uri_redirected, timeout=scan_timeout)
         except exceptions.ScannerError as exc:
             logger.debug("GStreamer failed scanning URI (%s): %s", uri, exc)
             scan_result = None
@@ -150,8 +152,8 @@ def _unwrap_stream(  # noqa: PLR0911  # TODO: cleanup the return value of this.
                 and not scan_result.mime.startswith("application/")
             )
             if scan_result.playable or has_interesting_mime:
-                logger.debug("Unwrapped potential %s stream: %s", scan_result.mime, uri)
-                return uri, scan_result
+                logger.debug("Unwrapped potential %s stream: %s", scan_result.mime, uri_redirected)
+                return uri_redirected, scan_result
 
         download_timeout = deadline - time.time()
         if download_timeout < 0:
